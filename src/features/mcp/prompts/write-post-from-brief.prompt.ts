@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { OAuthScopeRequest } from "@/features/oauth-provider/schema/oauth-provider.schema";
 import { defineMcpPrompt } from "../service/mcp-prompt";
+import {
+  createLanguageInstruction,
+  PromptLanguageSchema,
+} from "./prompt-language";
 
 const WRITE_POST_FROM_BRIEF_SCOPES: OAuthScopeRequest = {
   posts: ["read", "write"],
@@ -8,12 +12,18 @@ const WRITE_POST_FROM_BRIEF_SCOPES: OAuthScopeRequest = {
 
 export const writePostFromBriefPrompt = defineMcpPrompt({
   name: "write_post_from_brief",
-  title: "Write Post From Brief",
+  title: "根据描述写文章 / Write Post From Brief",
   description:
-    "Guide the assistant through researching, drafting, and structuring a blog post.",
+    "根据描述完成调研、起草与结构化写作 / Research, draft, and structure a post from a brief.",
   requiredScopes: WRITE_POST_FROM_BRIEF_SCOPES,
   argsSchema: {
-    brief: z.string().min(1).describe("Post brief or writing request."),
+    brief: z
+      .string()
+      .min(1)
+      .describe(
+        "文章描述或写作需求 / Post brief or writing request. 支持中英文 / Chinese and English are supported.",
+      ),
+    language: PromptLanguageSchema,
   },
   handler(args) {
     return {
@@ -26,6 +36,8 @@ export const writePostFromBriefPrompt = defineMcpPrompt({
             type: "text",
             text: [
               `Write a blog post based on this brief: ${args.brief}`,
+              "",
+              createLanguageInstruction(args.language),
               "",
               "Workflow:",
               "1. Use search_posts to inspect related published posts and avoid overlap.",

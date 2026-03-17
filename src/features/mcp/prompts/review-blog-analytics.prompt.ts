@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { OAuthScopeRequest } from "@/features/oauth-provider/schema/oauth-provider.schema";
 import { defineMcpPrompt } from "../service/mcp-prompt";
+import {
+  createLanguageInstruction,
+  PromptLanguageSchema,
+} from "./prompt-language";
 
 const REVIEW_BLOG_ANALYTICS_SCOPES: OAuthScopeRequest = {
   analytics: ["read"],
@@ -8,15 +12,17 @@ const REVIEW_BLOG_ANALYTICS_SCOPES: OAuthScopeRequest = {
 
 export const reviewBlogAnalyticsPrompt = defineMcpPrompt({
   name: "review_blog_analytics",
-  title: "Review Blog Analytics",
-  description:
-    "Guide the assistant through summarizing recent blog performance.",
+  title: "分析博客数据 / Review Blog Analytics",
+  description: "总结近期博客表现 / Summarize recent blog performance.",
   requiredScopes: REVIEW_BLOG_ANALYTICS_SCOPES,
   argsSchema: {
     range: z
       .enum(["24h", "7d", "30d", "90d"])
       .optional()
-      .describe("Analytics range. Defaults to 24h."),
+      .describe(
+        "统计范围 / Analytics range: 24h | 7d | 30d | 90d。默认 / Default: 24h.",
+      ),
+    language: PromptLanguageSchema,
   },
   handler(args) {
     const range = args.range ?? "24h";
@@ -31,6 +37,8 @@ export const reviewBlogAnalyticsPrompt = defineMcpPrompt({
             type: "text",
             text: [
               `Review blog analytics for the ${range} range.`,
+              "",
+              createLanguageInstruction(args.language),
               "",
               "Workflow:",
               "1. Use analytics_overview with the requested range.",

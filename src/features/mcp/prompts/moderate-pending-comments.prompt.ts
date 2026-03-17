@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { OAuthScopeRequest } from "@/features/oauth-provider/schema/oauth-provider.schema";
 import { defineMcpPrompt } from "../service/mcp-prompt";
+import {
+  createLanguageInstruction,
+  PromptLanguageSchema,
+} from "./prompt-language";
 
 const MODERATE_PENDING_COMMENTS_SCOPES: OAuthScopeRequest = {
   comments: ["read", "write"],
@@ -8,15 +12,18 @@ const MODERATE_PENDING_COMMENTS_SCOPES: OAuthScopeRequest = {
 
 export const moderatePendingCommentsPrompt = defineMcpPrompt({
   name: "moderate_pending_comments",
-  title: "Moderate Pending Comments",
+  title: "审核待处理评论 / Moderate Pending Comments",
   description:
-    "Guide the assistant through reviewing pending comments with context.",
+    "结合上下文审核待处理评论 / Review pending comments with context.",
   requiredScopes: MODERATE_PENDING_COMMENTS_SCOPES,
   argsSchema: {
     focus: z
       .string()
       .optional()
-      .describe("Optional moderation focus, such as spam or tone."),
+      .describe(
+        "可选审核重点，例如垃圾内容、辱骂或语气 / Optional moderation focus, for example spam, abuse, or tone.",
+      ),
+    language: PromptLanguageSchema,
   },
   handler(args) {
     const focusText = args.focus
@@ -34,6 +41,8 @@ export const moderatePendingCommentsPrompt = defineMcpPrompt({
             text: [
               "Moderate pending comments.",
               focusText,
+              "",
+              createLanguageInstruction(args.language),
               "",
               "Workflow:",
               "1. Use comments_list to fetch pending comments with context.",
